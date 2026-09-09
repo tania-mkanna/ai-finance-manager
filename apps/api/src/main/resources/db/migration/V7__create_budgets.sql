@@ -6,7 +6,6 @@ CREATE TABLE budgets (
     currency VARCHAR(3) NOT NULL,
     start_date DATE NOT NULL,
     end_date DATE NOT NULL,
-    CONSTRAINT ck_budgets_date_range CHECK (end_date >= start_date),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
