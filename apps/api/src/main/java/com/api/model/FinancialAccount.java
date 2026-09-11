@@ -9,7 +9,12 @@ import org.hibernate.annotations.SoftDeleteType;
 import java.util.UUID;
 
 @Entity
-@Table(name = "financial_accounts")
+@Table(
+        name = "financial_accounts",
+        indexes = {
+                @Index(name = "idx_financial_accounts_user_type", columnList = "user_id, type")
+        }
+)
 @SoftDelete(strategy = SoftDeleteType.ACTIVE, columnName = "active")
 @Getter
 @Setter

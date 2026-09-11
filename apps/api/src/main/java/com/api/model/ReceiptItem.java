@@ -7,7 +7,13 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Table(name = "receipt_items")
+@Table(
+        name = "receipt_items",
+        indexes = {
+                @Index(name = "idx_receipt_items_receipt_id", columnList = "receipt_id"),
+                @Index(name = "idx_receipt_items_category_id", columnList = "category_id")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor

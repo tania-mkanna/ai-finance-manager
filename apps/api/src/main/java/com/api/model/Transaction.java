@@ -10,7 +10,15 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "transactions")
+@Table(
+        name = "transactions",
+        indexes = {
+                @Index(name = "idx_transactions_user_date", columnList = "user_id, transaction_date"),
+                @Index(name = "idx_transactions_user_category_date", columnList = "user_id, category_id, transaction_date"),
+                @Index(name = "idx_transactions_user_account_date", columnList = "user_id, account_id, transaction_date"),
+                @Index(name = "idx_transactions_receipt_id", columnList = "receipt_id")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
