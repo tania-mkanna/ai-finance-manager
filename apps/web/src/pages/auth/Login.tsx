@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, Navigate, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { Button } from '../../components/ui/button'
 import { ApiError } from '../../lib/api-client'
 import { useAuth } from '../../providers/AuthProvider'
@@ -10,6 +10,7 @@ const initialState = {
 }
 
 export function LoginPage() {
+  const location = useLocation();
   const navigate = useNavigate()
   const { login, isAuthenticated, isLoading } = useAuth()
   const [form, setForm] = useState(initialState)
@@ -53,7 +54,15 @@ export function LoginPage() {
 
     try {
       await login({ email, password })
-      navigate('/dashboard', { replace: true })
+
+      const from = location.state?.from
+
+      const destination =
+        from?.pathname && from.pathname.startsWith('/')
+          ? `${from.pathname}${from.search ?? ''}${from.hash ?? ''}`
+          : '/dashboard'
+
+      navigate(destination, { replace: true })
     } catch (requestError) {
       const message =
         requestError instanceof ApiError

@@ -1,4 +1,4 @@
-import { Bell, LogOut, Menu, MoonStar, SunMedium } from 'lucide-react'
+import { Bell, LogOut, MoonStar, SunMedium } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../providers/AuthProvider'
@@ -9,7 +9,7 @@ interface HeaderProps {
   onMenuClick: () => void
 }
 
-export function Header({ onMenuClick }: HeaderProps) {
+export function Header({ }: HeaderProps) {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {

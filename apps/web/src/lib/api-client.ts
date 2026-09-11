@@ -52,11 +52,10 @@ async function request<T>(
     },
   });
 
-  /*
-   * If the access token expired, refresh it and retry
-   * the original request exactly once.
-   */
-  if (response.status === 401 && !options._retry && !path.includes("/auth/refresh")) {
+  const canRefresh =
+  !["/auth/login", "/auth/register", "/auth/refresh"].includes(requestPath);
+
+  if (response.status === 401 && !options._retry && canRefresh) {
     try {
       await refreshAccessToken();
 
