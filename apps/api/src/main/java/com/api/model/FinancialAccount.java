@@ -3,8 +3,10 @@ package com.api.model;
 import com.api.enums.FinancialAccountType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
 import org.hibernate.annotations.SoftDelete;
 import org.hibernate.annotations.SoftDeleteType;
+import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
 
 import java.util.UUID;
 
@@ -33,7 +35,12 @@ public class FinancialAccount extends BaseEntity {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(
+            name = "type",
+            nullable = false,
+            columnDefinition = "financial_account_type"
+    )
     private FinancialAccountType type;
 
     @Column(length = 3)

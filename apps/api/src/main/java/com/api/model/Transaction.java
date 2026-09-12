@@ -4,6 +4,8 @@ import com.api.enums.TransactionSource;
 import com.api.enums.TransactionType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -45,7 +47,12 @@ public class Transaction extends BaseEntity {
     private Receipt receipt;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(
+            name = "type",
+            nullable = false,
+            columnDefinition = "transaction_type"
+    )
     private TransactionType type;
 
     @Column(nullable = false, precision = 19, scale = 4)
@@ -63,6 +70,11 @@ public class Transaction extends BaseEntity {
     private String description;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(
+            name = "source",
+            nullable = false,
+            columnDefinition = "transaction_source"
+    )
     private TransactionSource source;
 }
