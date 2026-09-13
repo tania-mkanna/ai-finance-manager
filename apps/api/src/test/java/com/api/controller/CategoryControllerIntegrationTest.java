@@ -11,6 +11,7 @@ import com.api.repository.FinancialAccountRepository;
 import com.api.repository.TransactionRepository;
 import com.api.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.Cookie;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +58,24 @@ class CategoryControllerIntegrationTest extends BaseIntegrationTest {
     private PasswordEncoder passwordEncoder;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    private Cookie loginAndGetAccessCookie(String email) throws Exception {
+        MvcResult loginResult = mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                new com.api.dto.LoginRequest(
+                                        email,
+                                        "SecurePassword123!"
+                                )
+                        )))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        Cookie accessCookie = loginResult.getResponse().getCookie("access_token");
+        assertThat(accessCookie).isNotNull();
+
+        return accessCookie;
+    }
 
     @BeforeEach
     void setUp() {
@@ -134,7 +153,30 @@ class CategoryControllerIntegrationTest extends BaseIntegrationTest {
         Category saved = categoryRepository.findAll().stream().findFirst().orElseThrow();
         assertThat(saved.getUserId()).isEqualTo(user.getId());
     }
+    @Test
+    void create_shouldRejectNameLongerThan255Characters() throws Exception {
+        createUser("category-long-name@test.com", "Long Name User");
 
+        Cookie accessCookie =
+                loginAndGetAccessCookie("category-long-name@test.com");
+
+        String longName = "a".repeat(256);
+
+        CreateCategoryRequest request = new CreateCategoryRequest(
+                longName,
+                CategoryType.EXPENSE,
+                null,
+                null
+        );
+
+        mockMvc.perform(post("/api/v1/categories")
+                        .cookie(accessCookie)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.name")
+                        .value("Category name must be between 1 and 255 characters"));
+    }
     @Test
     void delete_shouldRejectIfCategoryIsReferencedByTransaction() throws Exception {
         User user = createUser("category-delete@test.com", "Delete User");
