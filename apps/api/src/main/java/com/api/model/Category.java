@@ -3,8 +3,11 @@ package com.api.model;
 import com.api.enums.CategoryType;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SoftDelete;
 import org.hibernate.annotations.SoftDeleteType;
+import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
 
 import java.util.UUID;
 
@@ -32,7 +35,12 @@ public class Category extends BaseEntity {
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(
+            name = "type",
+            nullable = false,
+            columnDefinition = "category_type"
+    )
     private CategoryType type;
 
     private String icon;
