@@ -18,8 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
-
+import org.springframework.dao.DataIntegrityViolationException;
 @Service
 public class FinancialAccountServiceImpl implements FinancialAccountService {
 
@@ -35,6 +36,25 @@ public class FinancialAccountServiceImpl implements FinancialAccountService {
         this.financialAccountRepository = financialAccountRepository;
         this.userRepository = userRepository;
         this.transactionRepository = transactionRepository;
+    }
+
+    private boolean isAccountNameUniqueViolation(Throwable throwable) {
+        Throwable cause = throwable;
+
+        while (cause != null) {
+            String message = cause.getMessage();
+
+            if (message != null
+                    && message.contains(
+                    "idx_financial_accounts_unique_active_user_name"
+            )) {
+                return true;
+            }
+
+            cause = cause.getCause();
+        }
+
+        return false;
     }
 
     @Override
@@ -93,8 +113,18 @@ public class FinancialAccountServiceImpl implements FinancialAccountService {
         account.setType(request.type());
         account.setCurrency(normalizedCurrency);
 
-        FinancialAccount saved = financialAccountRepository.save(account);
-        return FinancialAccountResponse.from(saved);
+        try {
+            FinancialAccount saved = financialAccountRepository.saveAndFlush(account);
+            return FinancialAccountResponse.from(saved);
+        } catch (DataIntegrityViolationException ex) {
+            if (isAccountNameUniqueViolation(ex)) {
+                throw new ConflictException(
+                        "Financial account with this name already exists"
+                );
+            }
+
+            throw ex;
+        }
     }
 
     @Override
@@ -145,7 +175,20 @@ public class FinancialAccountServiceImpl implements FinancialAccountService {
         account.setType(resolvedType);
         account.setCurrency(resolvedCurrency);
 
-        return FinancialAccountResponse.from(financialAccountRepository.save(account));
+        try {
+            FinancialAccount saved =
+                    financialAccountRepository.saveAndFlush(account);
+
+            return FinancialAccountResponse.from(saved);
+        } catch (DataIntegrityViolationException ex) {
+            if (isAccountNameUniqueViolation(ex)) {
+                throw new ConflictException(
+                        "Financial account with this name already exists"
+                );
+            }
+
+            throw ex;
+        }
     }
 
     @Override
@@ -175,7 +218,7 @@ public class FinancialAccountServiceImpl implements FinancialAccountService {
             return null;
         }
 
-        String normalized = currency.trim().toUpperCase();
+        String normalized = currency.trim().toUpperCase(Locale.ROOT);
 
         try {
             java.util.Currency.getInstance(normalized);

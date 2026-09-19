@@ -104,7 +104,8 @@ class FinancialAccountControllerIntegrationTest extends BaseIntegrationTest {
         mockMvc.perform(get("/api/v1/accounts").cookie(accessCookie))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Cash"))
-                .andExpect(jsonPath("$[0].currency").value("USD"));
+                .andExpect(jsonPath("$[0].currency").value("USD"))
+                .andExpect(jsonPath("$[1]").doesNotExist());
     }
 
     @Test
