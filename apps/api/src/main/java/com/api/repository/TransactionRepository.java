@@ -7,4 +7,6 @@ import java.util.UUID;
 
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
     boolean existsByCategoryId(UUID categoryId);
+
+    boolean existsByAccountId(UUID accountId);
 }
