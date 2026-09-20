@@ -5,6 +5,8 @@ import com.api.enums.TransactionType;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcType;
+import org.hibernate.annotations.SoftDelete;
+import org.hibernate.annotations.SoftDeleteType;
 import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
 
 import java.math.BigDecimal;
@@ -21,6 +23,7 @@ import java.util.UUID;
                 @Index(name = "idx_transactions_receipt_id", columnList = "receipt_id")
         }
 )
+@SoftDelete(strategy = SoftDeleteType.ACTIVE, columnName = "active")
 @Getter
 @Setter
 @NoArgsConstructor

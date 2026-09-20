@@ -2,6 +2,8 @@ package com.api.exception;
 
 import com.api.enums.CategoryType;
 import com.api.enums.FinancialAccountType;
+import com.api.enums.TransactionSource;
+import com.api.enums.TransactionType;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -163,6 +165,14 @@ public class GlobalExceptionHandler {
 
         if (enumType == CategoryType.class) {
             return "Invalid category type. Allowed values: INCOME, EXPENSE, BOTH";
+        }
+
+        if (enumType == TransactionType.class) {
+            return "Invalid transaction type. Allowed values: INCOME, EXPENSE";
+        }
+
+        if (enumType == TransactionSource.class) {
+            return "Invalid transaction source. Allowed values: MANUAL, RECEIPT";
         }
 
         Object[] values = enumType.getEnumConstants();
