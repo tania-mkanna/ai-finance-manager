@@ -116,8 +116,8 @@ public class TransactionServiceImpl implements TransactionService {
         if (page < 0) {
             throw new InvalidRequestException("Page must be greater than or equal to 0");
         }
-        if (size <= 0) {
-            throw new InvalidRequestException("Size must be greater than 0");
+        if (size <= 0 || size > 100) {
+            throw new InvalidRequestException("Size must be between 1 and 100");
         }
         if (minAmount != null && maxAmount != null && minAmount.compareTo(maxAmount) > 0) {
             throw new InvalidRequestException("minAmount cannot be greater than maxAmount");
