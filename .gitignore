@@ -55,3 +55,6 @@ venv/
 # Temporary files
 *.tmp
 *.temp
+
+# storage
+apps/api/storage/

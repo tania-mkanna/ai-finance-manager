@@ -2,12 +2,15 @@ package com.api.exception;
 
 import com.api.enums.CategoryType;
 import com.api.enums.FinancialAccountType;
+import com.api.enums.ReceiptStatus;
 import com.api.enums.TransactionSource;
 import com.api.enums.TransactionType;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
@@ -16,6 +19,13 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.ServletRequestBindingException;
+import org.springframework.web.multipart.MultipartRequest;
+import org.springframework.web.bind.MissingRequestValueException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import tools.jackson.databind.exc.InvalidFormatException;
 
 import java.util.Arrays;
@@ -87,6 +97,27 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleInvalidRequestException(InvalidRequestException ex) {
         Map<String, String> error = new HashMap<>();
         error.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, String>> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "Receipt file exceeds the allowed size limit");
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(error);
+    }
+
+    @ExceptionHandler({
+            MissingServletRequestParameterException.class,
+            MissingServletRequestPartException.class,
+            ServletRequestBindingException.class,
+            MultipartException.class,
+            MissingRequestValueException.class,
+            HttpMediaTypeNotSupportedException.class
+    })
+    public ResponseEntity<Map<String, String>> handleMultipartValidationExceptions(Exception ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "Receipt file is required");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
@@ -173,6 +204,10 @@ public class GlobalExceptionHandler {
 
         if (enumType == TransactionSource.class) {
             return "Invalid transaction source. Allowed values: MANUAL, RECEIPT";
+        }
+
+        if (enumType == ReceiptStatus.class) {
+            return "Invalid receipt status. Allowed values: UPLOADED, PROCESSING, REVIEW_REQUIRED, CONFIRMED, FAILED";
         }
 
         Object[] values = enumType.getEnumConstants();

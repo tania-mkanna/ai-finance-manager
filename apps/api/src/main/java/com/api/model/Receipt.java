@@ -3,10 +3,14 @@ package com.api.model;
 import com.api.enums.ReceiptStatus;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.type.PostgreSQLEnumJdbcType;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -39,7 +43,12 @@ public class Receipt extends BaseEntity {
     private String mimeType;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(
+            name = "status",
+            nullable = false,
+            columnDefinition = "receipt_status"
+    )
     private ReceiptStatus status;
 
     @Column(name = "receipt_date")
@@ -62,6 +71,9 @@ public class Receipt extends BaseEntity {
 
     @Column(name = "error_message")
     private String errorMessage;
+
+    @OneToMany(mappedBy = "receipt", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ReceiptItem> items = new ArrayList<>();
 
     @PrePersist
     protected void onReceiptCreate() {
