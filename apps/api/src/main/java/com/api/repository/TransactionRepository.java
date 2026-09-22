@@ -16,6 +16,8 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID>,
 
     boolean existsByAccountId(UUID accountId);
 
+    boolean existsByReceipt_Id(UUID receiptId);
+
     @EntityGraph(attributePaths = {"category", "account"})
     Optional<Transaction> findById(UUID transactionId);
 

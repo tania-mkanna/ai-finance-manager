@@ -2,12 +2,14 @@ package com.api.exception;
 
 import com.api.enums.CategoryType;
 import com.api.enums.FinancialAccountType;
+import com.api.enums.ReceiptStatus;
 import com.api.enums.TransactionSource;
 import com.api.enums.TransactionType;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
@@ -16,6 +18,11 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.bind.ServletRequestBindingException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import tools.jackson.databind.exc.InvalidFormatException;
 
 import java.util.Arrays;
@@ -88,6 +95,83 @@ public class GlobalExceptionHandler {
         Map<String, String> error = new HashMap<>();
         error.put("message", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, String>> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "Receipt file exceeds the allowed size limit");
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(error);
+    }
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<Map<String, String>> handleMissingServletRequestPart(
+            MissingServletRequestPartException ex
+    ) {
+        Map<String, String> error = new HashMap<>();
+
+        if ("file".equals(ex.getRequestPartName())) {
+            error.put("message", "Receipt file is required");
+        } else {
+            error.put(
+                    "message",
+                    "Required multipart part is missing: " + ex.getRequestPartName()
+            );
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Map<String, String>> handleMissingServletRequestParameter(
+            MissingServletRequestParameterException ex
+    ) {
+        Map<String, String> error = new HashMap<>();
+        error.put(
+                "message",
+                "Required parameter is missing: " + ex.getParameterName()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<Map<String, String>> handleHttpMediaTypeNotSupported(
+            HttpMediaTypeNotSupportedException ex
+    ) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "Unsupported media type");
+
+        return ResponseEntity
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(error);
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<Map<String, String>> handleMultipartException(
+            MultipartException ex
+    ) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "Invalid multipart request");
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
+
+    @ExceptionHandler(ServletRequestBindingException.class)
+    public ResponseEntity<Map<String, String>> handleServletRequestBindingException(
+            ServletRequestBindingException ex
+    ) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "Invalid or missing request parameter");
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
@@ -173,6 +257,10 @@ public class GlobalExceptionHandler {
 
         if (enumType == TransactionSource.class) {
             return "Invalid transaction source. Allowed values: MANUAL, RECEIPT";
+        }
+
+        if (enumType == ReceiptStatus.class) {
+            return "Invalid receipt status. Allowed values: UPLOADED, PROCESSING, REVIEW_REQUIRED, CONFIRMED, FAILED";
         }
 
         Object[] values = enumType.getEnumConstants();
