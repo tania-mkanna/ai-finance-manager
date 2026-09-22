@@ -8,7 +8,6 @@ import com.api.enums.TransactionType;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.security.authentication.AuthenticationServiceException;
@@ -23,8 +22,6 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.ServletRequestBindingException;
-import org.springframework.web.multipart.MultipartRequest;
-import org.springframework.web.bind.MissingRequestValueException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import tools.jackson.databind.exc.InvalidFormatException;
 
@@ -106,19 +103,75 @@ public class GlobalExceptionHandler {
         error.put("message", "Receipt file exceeds the allowed size limit");
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(error);
     }
-
-    @ExceptionHandler({
-            MissingServletRequestParameterException.class,
-            MissingServletRequestPartException.class,
-            ServletRequestBindingException.class,
-            MultipartException.class,
-            MissingRequestValueException.class,
-            HttpMediaTypeNotSupportedException.class
-    })
-    public ResponseEntity<Map<String, String>> handleMultipartValidationExceptions(Exception ex) {
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<Map<String, String>> handleMissingServletRequestPart(
+            MissingServletRequestPartException ex
+    ) {
         Map<String, String> error = new HashMap<>();
-        error.put("message", "Receipt file is required");
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+
+        if ("file".equals(ex.getRequestPartName())) {
+            error.put("message", "Receipt file is required");
+        } else {
+            error.put(
+                    "message",
+                    "Required multipart part is missing: " + ex.getRequestPartName()
+            );
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<Map<String, String>> handleMissingServletRequestParameter(
+            MissingServletRequestParameterException ex
+    ) {
+        Map<String, String> error = new HashMap<>();
+        error.put(
+                "message",
+                "Required parameter is missing: " + ex.getParameterName()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<Map<String, String>> handleHttpMediaTypeNotSupported(
+            HttpMediaTypeNotSupportedException ex
+    ) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "Unsupported media type");
+
+        return ResponseEntity
+                .status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(error);
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<Map<String, String>> handleMultipartException(
+            MultipartException ex
+    ) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "Invalid multipart request");
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
+    }
+
+    @ExceptionHandler(ServletRequestBindingException.class)
+    public ResponseEntity<Map<String, String>> handleServletRequestBindingException(
+            ServletRequestBindingException ex
+    ) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", "Invalid or missing request parameter");
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(error);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

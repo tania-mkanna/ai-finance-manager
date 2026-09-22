@@ -1,5 +1,6 @@
 package com.api.service.impl;
 
+import com.api.exception.FileStorageException;
 import com.api.exception.InvalidRequestException;
 import com.api.service.interfaces.FileStorageService;
 import org.springframework.beans.factory.annotation.Value;
@@ -73,11 +74,15 @@ public class LocalFileStorageService implements FileStorageService {
             return;
         }
 
+        Path target = resolveStoragePath(storedPath);
+
         try {
-            Path target = resolveStoragePath(storedPath);
             Files.deleteIfExists(target);
-        } catch (IOException ignored) {
-            // best effort cleanup to avoid orphan files
+        } catch (IOException ex) {
+            throw new FileStorageException(
+                    "Could not delete receipt file",
+                    ex
+            );
         }
     }
 

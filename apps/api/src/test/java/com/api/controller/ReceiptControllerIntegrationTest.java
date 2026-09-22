@@ -124,14 +124,29 @@ class ReceiptControllerIntegrationTest extends BaseIntegrationTest {
         assertThat(saved.getProcessedAt()).isNull();
         assertThat(saved.getErrorMessage()).isNull();
     }
+    @Test
+    void upload_shouldRejectUnsupportedMediaType() throws Exception {
+        createUser("receipt-media@test.com", "Media User");
+        Cookie accessCookie = loginAndGetAccessCookie("receipt-media@test.com");
+
+        mockMvc.perform(post("/api/v1/receipts")
+                        .cookie(accessCookie)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.message")
+                        .value("Unsupported media type"));
+    }
 
     @Test
     void upload_shouldRejectMissingEmptyAndInvalidFiles() throws Exception {
-        User user = createUser("receipt-invalid@test.com", "Invalid User");
+        createUser("receipt-invalid@test.com", "Invalid User");
         Cookie accessCookie = loginAndGetAccessCookie("receipt-invalid@test.com");
 
-        mockMvc.perform(post("/api/v1/receipts").cookie(accessCookie))
-                .andExpect(status().isBadRequest());
+        mockMvc.perform(multipart("/api/v1/receipts")
+                        .cookie(accessCookie))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Receipt file is required"));
 
         mockMvc.perform(multipart("/api/v1/receipts")
                         .file(new MockMultipartFile("file", "empty.jpg", "image/jpeg", new byte[0]))

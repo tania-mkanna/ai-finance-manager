@@ -1,7 +1,6 @@
 package com.api.service.impl;
 
 import com.api.dto.*;
-import com.api.enums.CategoryType;
 import com.api.enums.ReceiptStatus;
 import com.api.exception.ConflictException;
 import com.api.exception.ForbiddenException;
@@ -27,6 +26,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
@@ -87,6 +88,7 @@ public class ReceiptServiceImpl implements ReceiptService {
         Receipt receipt = new Receipt();
         receipt.setUser(user);
         String storagePath = fileStorageService.storeFile(file);
+        registerFileCleanupOnRollback(storagePath);
         receipt.setFileUrl(storagePath);
         receipt.setFileName(safeDisplayFileName(file.getOriginalFilename()));
         receipt.setMimeType(file.getContentType() == null ? "application/octet-stream" : file.getContentType());
@@ -98,13 +100,8 @@ public class ReceiptServiceImpl implements ReceiptService {
         receipt.setMerchantName(null);
         receipt.setTotalAmount(null);
 
-        try {
-            Receipt saved = receiptRepository.save(receipt);
-            return ReceiptUploadResponse.from(saved);
-        } catch (RuntimeException ex) {
-            fileStorageService.deleteFile(storagePath);
-            throw ex;
-        }
+        Receipt saved = receiptRepository.save(receipt);
+        return ReceiptUploadResponse.from(saved);
     }
 
     @Override
@@ -234,9 +231,10 @@ public class ReceiptServiceImpl implements ReceiptService {
             throw new ConflictException("Receipt is referenced by one or more transactions");
         }
 
-        receiptItemRepository.deleteByReceiptId(receiptId);
+
+        String storagePath = receipt.getFileUrl();
         receiptRepository.delete(receipt);
-        fileStorageService.deleteFile(receipt.getFileUrl());
+        registerFileDeletionAfterCommit(storagePath);
     }
 
     @Override
@@ -348,7 +346,29 @@ public class ReceiptServiceImpl implements ReceiptService {
             }
         }
     }
+    private void registerFileCleanupOnRollback(String storagePath) {
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCompletion(int status) {
+                        if (status == TransactionSynchronization.STATUS_ROLLED_BACK) {
+                            fileStorageService.deleteFile(storagePath);
+                        }
+                    }
+                }
+        );
+    }
 
+    private void registerFileDeletionAfterCommit(String storagePath) {
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        fileStorageService.deleteFile(storagePath);
+                    }
+                }
+        );
+    }
     private Sort buildSort(String sort) {
         if (sort == null || sort.isBlank()) {
             return Sort.by(Sort.Direction.DESC, "uploadedAt");
